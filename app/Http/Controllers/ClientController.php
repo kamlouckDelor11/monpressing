@@ -104,10 +104,12 @@ class ClientController extends Controller
      */
     public function getOrdersHistory(Client $client)
     {
-        // Supposons que votre modèle Client a une relation "hasMany" avec un modèle Order
-        $orders = $client->orders()->select('id', 'created_at', 'status', 'total_amount')->get();
+        $pressingToken =Auth::User()->pressing_token;
+
+        $orders = $client->orders()->select('reference', 'deposit_date', 'payment_status', 'delivery_status', 'total_amount')->where('pressing_token', $pressingToken)->get();
 
         return response()->json($orders);
     }
 }
+
 

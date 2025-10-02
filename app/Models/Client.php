@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Client extends Model
 {
@@ -48,5 +50,13 @@ class Client extends Model
     public function user()
     {
         return $this->belongsTo(user::class, 'user_token', 'token');
+    }
+
+    /**
+     * Get the orders for the client.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'client_token', 'token');
     }
 }

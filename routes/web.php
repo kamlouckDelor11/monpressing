@@ -4,6 +4,7 @@ use App\Http\Controllers\ArticleController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PressingController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ServiceController;
 
 Route::get('/', function () {
@@ -23,9 +24,7 @@ Route::middleware(['web', 'auth'])->get('/dashboard/manager/gestionnaire', funct
 })->name('manager.gestionnaire');
 
 
-Route::get('/dasboard/order', function () {
-    return view('add-oder');
-})->name('order');
+
 
 
 Route::post('create/store',[PressingController::class, 'store'])->name('create.store');
@@ -66,5 +65,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/services', [ServiceController::class, 'store'])->name('services.store');
     Route::put('/services/{service}', [ServiceController::class, 'update'])->name('services.update');
     Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+
+
+   // Routes pour la gestion des dépôts
+    Route::get('/orders', [OrderController::class, 'index'])->name('order');
+    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::get('/api/clients/search', [OrderController::class, 'searchClientByPhone']);
+    Route::get('/api/articles/search', [OrderController::class, 'searchArticleByName']);
+    Route::get('/api/services', [OrderController::class, 'getServices']);
 
 });

@@ -187,8 +187,9 @@
                             <thead>
                                 <tr>
                                     <th>ID Commande</th>
-                                    <th>Date</th>
-                                    <th>Statut</th>
+                                    <th>Date de dépôt</th>
+                                    <th>Statut commande</th>
+                                    <th>Statut paiement</th>
                                     <th>Montant Total</th>
                                 </tr>
                             </thead>
@@ -401,10 +402,11 @@
                     data.forEach(order => {
                         const row = `
                             <tr>
-                                <td>${order.id}</td>
-                                <td>${new Date(order.created_at).toLocaleDateString()}</td>
-                                <td>${order.status}</td>
-                                <td>${order.total_amount} €</td>
+                                <td>${order.reference}</td>
+                                <td>${new Date(order.deposit_date).toLocaleDateString()}</td>
+                                <td>${order.delivery_status}</td>
+                                <td>${order.payment_status}</td>
+                                <td>${order.total_amount} FCFA</td>
                             </tr>
                         `;
                         historyBody.append(row);
