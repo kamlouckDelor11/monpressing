@@ -19,6 +19,7 @@
       <nav class="nav flex-column p-3">
         <a href="{{ route('order') }}" class="nav-link text-secondary">➕ Enregistrer un dépôt</a>
         <a href="{{ route('clients.index') }}" class="nav-link text-secondary">👤 Gestion des clients</a>
+        <a href="{{ route('manager.order') }}" class="nav-link text-secondary">👔 Gestion des dépôts</a>
         <a href="{{ route('articles.index') }}" class="nav-link text-secondary">👔 Gestion des articles</a>
         <a href="{{ route('services.index') }}" class="nav-link text-secondary">👔 Gestion des services</a>
         @if (Auth::User()->role === 'admin')

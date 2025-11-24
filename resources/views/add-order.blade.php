@@ -122,7 +122,7 @@
                                             <input type="number" step="0.01" class="form-control" id="kiloInput">
                                         </div>
                                         <div class="col-md-4">
-                                            <label for="pricePerKiloInput" class="form-label">Prix par kilo (€)</label>
+                                            <label for="pricePerKiloInput" class="form-label">Prix par kilo (XAF)</label>
                                             <input type="number" step="0.01" class="form-control" id="pricePerKiloInput">
                                         </div>
                                         <div class="col-md-4 align-self-end">
@@ -146,7 +146,7 @@
                                             <select class="form-select" id="serviceSelect"></select>
                                         </div>
                                         <div class="col-md-3">
-                                            <label for="pressingUnitPrice" class="form-label">Prix unitaire (€)</label>
+                                            <label for="pressingUnitPrice" class="form-label">Prix unitaire (XAF)</label>
                                             <input type="number" step="0.01" class="form-control" id="pressingUnitPrice" placeholder="Prix">
                                         </div>
                                         <div class="col-md-2">
@@ -181,29 +181,29 @@
                                 <h6 class="card-title">Récapitulatif & Paiement</h6>
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label for="totalAmountInput" class="form-label">Total (€)</label>
+                                        <label for="totalAmountInput" class="form-label">Total (XAF)</label>
                                         <input type="text" class="form-control" id="totalAmountInput" name="total_amount" readonly>
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="discountInput" class="form-label">Remise (€)</label>
+                                        <label for="discountInput" class="form-label">Remise (XAF)</label>
                                         <input type="number" step="0.01" class="form-control" id="discountInput" name="discount_amount" value="0">
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="finalAmountInput" class="form-label">Montant final (€)</label>
+                                        <label for="finalAmountInput" class="form-label">Montant final (XAF)</label>
                                         <input type="text" class="form-control" id="finalAmountInput" readonly>
                                     </div>
-                                    <div class="col-md-4">
+                                    {{-- <div class="col-md-4">
                                         <label for="paymentMethodSelect" class="form-label">Mode de règlement</label>
                                         <select class="form-select" id="paymentMethodSelect" name="payment_method">
                                             <option value="cash">Espèces</option>
                                             <option value="card">Carte</option>
                                             <option value="credit">À crédit</option>
                                         </select>
-                                    </div>
-                                    <div class="col-md-4">
+                                    </div> --}}
+                                    {{-- <div class="col-md-4">
                                         <label for="paidAmountInput" class="form-label">Montant perçu (€)</label>
                                         <input type="number" step="0.01" class="form-control" id="paidAmountInput" name="paid_amount">
-                                    </div>
+                                    </div> --}}
                                     <div class="col-md-4">
                                         <label for="depositDateInput" class="form-label">Date de dépôt</label>
                                         <input type="date" class="form-control" id="depositDateInput" name="deposit_date" required>

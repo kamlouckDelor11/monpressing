@@ -69,9 +69,20 @@ Route::middleware(['auth'])->group(function () {
 
    // Routes pour la gestion des dépôts
     Route::get('/orders', [OrderController::class, 'index'])->name('order');
+    Route::get('/manager_oder', [OrderController::class, 'manager_order'])->name('manager.order');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/api/clients/search', [OrderController::class, 'searchClientByPhone']);
     Route::get('/api/articles/search', [OrderController::class, 'searchArticleByName']);
     Route::get('/api/services', [OrderController::class, 'getServices']);
+    Route::get('/orders/filter', [OrderController::class, 'filterOrder'])->name('orders.filter');
+
+    // Gestion des références pour les selects (in changée)
+    Route::get('orders/references', [OrderController::class, 'getOrderReferences']);
+
+    // Mise à jour du statut (utilisation du {token})
+    Route::post('orders/{token}/status', [OrderController::class, 'updateDeliveryStatus']);
+
+    // Encaissement (utilisation du {token})
+    Route::post('orders/{token}/cash-in', [OrderController::class, 'cashIn']);
 
 });

@@ -65,4 +65,15 @@ class Order extends Model
     {
         return $this->hasMany(Payment::class, 'order_token', 'token');
     }
+
+    /**
+     * Un dépôt a été créé par un seul utilisateur (gestionnaire).
+     * Relation Many-to-One.
+     * @return BelongsTo
+     */
+    public function user(): BelongsTo
+    {
+        
+        return $this->belongsTo(User::class, 'user_token', 'token');
+    }
 }

@@ -51,7 +51,7 @@
                 <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
                 <a href="{{ route('order') }}" class="nav-link text-secondary">➕ Enregistrer un dépôt</a>
                 <a href="{{ route('clients.index') }}" class="nav-link text-secondary">👤 Créer un client</a>
-                <a href="{{ route('articles.index') }}" class="nav-link text-secondary">👔 Gérer les articles</a>
+                <a href="{{ route('articles.index') }}" class="nav-link text-primary active">👔 Gérer les articles</a>
                 @if (Auth::User()->role === 'admin')
                     <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑‍💼 Ajouter un gestionnaire</a>
                 @endif
