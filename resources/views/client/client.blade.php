@@ -60,23 +60,22 @@
         </div>
         <div class="offcanvas-body d-flex flex-column p-0">
             <nav class="nav flex-column p-3">
-                <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
+                 <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
                 <a href="{{ route('order') }}" class="nav-link text-secondary">➕ Enregistrer un dépôt</a>
-                <a href="#" class="nav-link text-secondary">👔 Gestion des dépôts</a>
-                <a href="{{ route('clients.index') }}" class="nav-link text-primary active">👤 Gestion des clients</a>
-                <a href="{{ route('articles.index') }}" class="nav-link text-secondary">👔 Gestion des articles</a>
-                <a href="{{ route('services.index') }}" class="nav-link text-secondary">👔 Gestion des services</a>
+                <a href="{{ route('manager.order') }}" class="nav-link text-secondary">✅ Gestion des dépôts</a>
+                <a href="{{ route('articles.index') }}" class="nav-link text-secondary">✅ Gestion des articles</a>
+                <a href="{{ route('services.index') }}" class="nav-link text-secondary">✅ Gestion des services</a>
                 @if (Auth::User()->role === 'admin')
-                    <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑‍💼 Ajouter un gestionnaire</a>
+                    <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑 Gestionnaire</a>
                 @endif
                 <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
-                    <ul class="dropdown-menu">
-                        @if (Auth::User()->role === 'admin')
-                            <li><a class="dropdown-item" href="#">👥 Salaire</a></li>
-                        @endif
-                        <li><a class="dropdown-item" href="#">📦 Autres Dépenses</a></li>
-                    </ul>
+                <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
+                <ul class="dropdown-menu">
+                    @if (Auth::User()->role === 'admin')
+                    <li><a class="dropdown-item" href="{{ route('manager.payroll.index') }}">👥 Salaire</a></li>
+                    @endif  
+                    <li><a class="dropdown-item" href="{{ route('spenses.index') }}">📦 Autres Dépenses</a></li>
+                </ul>
                 </div>
                 @if (Auth::User()->role === 'admin')
                     <a href="#" class="nav-link text-secondary">📊 Statistiques</a>
@@ -297,7 +296,7 @@
                                 <td>${client.address}</td>
                                 <td class="actions-buttons">
                                     <button class="btn btn-sm btn-warning edit-btn" data-bs-toggle="modal" data-bs-target="#clientModal" data-client-id="${client.token}" data-client-name="${client.name}" data-client-phone="${client.phone}" data-client-address="${client.address}">Modifier</button>
-                                    <button class="btn btn-sm btn-danger delete-btn" data-client-id="${client.token}">Supprimer</button>
+                                    {{--<button class="btn btn-sm btn-danger delete-btn" data-client-id="${client.token}">Supprimer</button>--}}
                                     <button class="btn btn-sm btn-info history-btn" data-bs-toggle="modal" data-bs-target="#historyModal" data-client-id="${client.token}" data-client-name="${client.name}">Historique</button>
                                 </td>
                             </tr>

@@ -30,22 +30,22 @@
         </div>
         <div class="offcanvas-body d-flex flex-column p-0">
             <nav class="nav flex-column p-3">
-                <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
-                <a href="{{ route('order') }}" class="nav-link text-primary">➕ Enregistrer un dépôt</a>
-                <a href="{{ route('clients.index') }}" class="nav-link text-secondary">👤 Gérer les clients</a>
-                <a href="{{ route('articles.index') }}" class="nav-link text-secondary">👔 Gérer les articles</a>
-                <a href="{{ route('services.index') }}" class="nav-link text-secondary">🪣 Gérer les services</a>
+                 <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
+                <a href="{{ route('clients.index') }}" class="nav-link text-secondary">✅ Gestion des clients</a>
+                <a href="{{ route('manager.order') }}" class="nav-link text-secondary">✅ Gestion des dépôts</a>
+                <a href="{{ route('articles.index') }}" class="nav-link text-secondary">✅ Gestion des articles</a>
+                <a href="{{ route('services.index') }}" class="nav-link text-secondary">✅ Gestion des services</a>
                 @if (Auth::User()->role === 'admin')
-                    <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑‍💼 Ajouter un gestionnaire</a>
+                    <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑 Gestionnaire</a>
                 @endif
                 <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
-                    <ul class="dropdown-menu">
-                        @if (Auth::User()->role === 'admin')
-                            <li><a class="dropdown-item" href="#">👥 Salaire</a></li>
-                        @endif
-                        <li><a class="dropdown-item" href="#">📦 Autres Dépenses</a></li>
-                    </ul>
+                <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
+                <ul class="dropdown-menu">
+                    @if (Auth::User()->role === 'admin')
+                    <li><a class="dropdown-item" href="{{ route('manager.payroll.index') }}">👥 Salaire</a></li>
+                    @endif  
+                    <li><a class="dropdown-item" href="{{ route('spenses.index') }}">📦 Autres Dépenses</a></li>
+                </ul>
                 </div>
                 @if (Auth::User()->role === 'admin')
                     <a href="#" class="nav-link text-secondary">📊 Statistiques</a>
@@ -233,7 +233,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="createClientForm" method="POST" action="{{ route('clients.store') }}">
+                    <form id="reateClientForm" method="POST" action="{{ route('clients.store') }}">
                         @csrf
                         <input type="hidden" name="_method" value="POST">
                         <input type="hidden" name="id" id="clientId">
@@ -687,6 +687,35 @@
                         errorMessage = xhr.responseJSON.message;
                     }
                     showNotification(errorMessage, false);
+                }
+            });
+        });
+
+        // Envoi du formulaire client
+        $('#reateClientForm').on('submit', function(e) {
+            e.preventDefault();
+             
+           const form = $(this);
+            const clientId = $('#clientId').val();
+            const method = form.find('input[name="_method"]').val();
+            const url = clientId ? `/clients/${clientId}` : "{{ route('clients.store') }}";
+
+            showLoader()
+            $.ajax({
+                url: url,
+                method: method,
+                data: form.serialize(),
+                success: function(response) {
+                    $('#clientModal').modal('hide');
+                    showNotification(response.message || 'Opération réussie !', true);
+                    loadClients(); // Mise à jour de la liste
+                    hideLoader()
+                },
+                error: function(response) {
+                    const errorMessage = response.responseJSON.message || 'Une erreur est survenue.';
+                    showNotification(errorMessage, false);
+                    hideLoader()
+
                 }
             });
         });

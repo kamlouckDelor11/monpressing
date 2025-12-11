@@ -27,6 +27,16 @@
             z-index: 10;
             background-color: var(--bs-body-bg);
         }
+        /* Assure que les colonnes du thead et du tbody correspondent */
+        .articles-table-grid table:first-child thead tr th:nth-child(1),
+        .articles-table-body-scrollable table tbody tr td:nth-child(1) { width: 40%; }
+        
+        .articles-table-grid table:first-child thead tr th:nth-child(2),
+        .articles-table-body-scrollable table tbody tr td:nth-child(2) { width: 25%; }
+        
+        .articles-table-grid table:first-child thead tr th:nth-child(3),
+        .articles-table-body-scrollable table tbody tr td:nth-child(3) { width: 35%; }
+        
         .actions-buttons {
             display: flex;
             flex-direction: column;
@@ -35,6 +45,7 @@
         @media (min-width: 576px) {
             .actions-buttons {
                 flex-direction: row;
+                justify-content: flex-end;
             }
         }
     </style>
@@ -50,19 +61,20 @@
             <nav class="nav flex-column p-3">
                 <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
                 <a href="{{ route('order') }}" class="nav-link text-secondary">➕ Enregistrer un dépôt</a>
-                <a href="{{ route('clients.index') }}" class="nav-link text-secondary">👤 Créer un client</a>
-                <a href="{{ route('articles.index') }}" class="nav-link text-primary active">👔 Gérer les articles</a>
+                <a href="{{ route('clients.index') }}" class="nav-link text-secondary">✅ Gestion des clients</a>
+                <a href="{{ route('manager.order') }}" class="nav-link text-secondary">✅ Gestion des dépôts</a>
+                <a href="{{ route('services.index') }}" class="nav-link text-secondary">✅ Gestion des services</a>
                 @if (Auth::User()->role === 'admin')
-                    <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑‍💼 Ajouter un gestionnaire</a>
+                    <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑 Gestionnaire</a>
                 @endif
                 <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
-                    <ul class="dropdown-menu">
-                        @if (Auth::User()->role === 'admin')
-                            <li><a class="dropdown-item" href="#">👥 Salaire</a></li>
-                        @endif
-                        <li><a class="dropdown-item" href="#">📦 Autres Dépenses</a></li>
-                    </ul>
+                <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
+                <ul class="dropdown-menu">
+                    @if (Auth::User()->role === 'admin')
+                    <li><a class="dropdown-item" href="{{ route('manager.payroll.index') }}">👥 Salaire</a></li>
+                    @endif 
+                    <li><a class="dropdown-item" href="{{ route('spenses.index') }}">📦 Autres Dépenses</a></li>
+                </ul>
                 </div>
                 @if (Auth::User()->role === 'admin')
                     <a href="#" class="nav-link text-secondary">📊 Statistiques</a>
@@ -123,6 +135,7 @@
         </main>
     </div>
 
+    {{-- Modal : Ajouter/Modifier Article --}}
     <div class="modal fade" id="articleModal" tabindex="-1" aria-labelledby="articleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -153,6 +166,7 @@
         </div>
     </div>
 
+    {{-- Modal : Détails de l'Article (avec bouton d'impression) --}}
     <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -165,12 +179,17 @@
                     <p><strong>Prix :</strong> <span id="viewPrice"></span></p>
                 </div>
                 <div class="modal-footer">
+                    {{-- NOUVEAU : Bouton d'impression du coupon --}}
+                    <a id="printCouponBtn" href="#" class="btn btn-success" target="_blank" title="Imprimer le coupon de dépôt">
+                        <i class="bi bi-printer-fill"></i> Imprimer Coupon
+                    </a>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                 </div>
             </div>
         </div>
     </div>
 
+    {{-- Modal : Notification --}}
     <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
@@ -185,6 +204,7 @@
         </div>
     </div>
 
+    {{-- Loader Modal Backdrop --}}
     <div id="loader" class="modal-backdrop d-none position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style="background-color: rgba(0,0,0,0.5); z-index: 2000;">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Chargement...</span>
@@ -258,8 +278,18 @@
                                 <td>${article.name}</td>
                                 <td>${article.price ? article.price + ' FCFA' : 'Non défini'}</td>
                                 <td class="actions-buttons">
-                                    <button class="btn btn-sm btn-info view-btn" data-bs-toggle="modal" data-bs-target="#viewModal" data-article-name="${article.name}" data-article-price="${article.price}">Afficher</button>
-                                    <button class="btn btn-sm btn-warning edit-btn" data-bs-toggle="modal" data-bs-target="#articleModal" data-article-token="${article.token}" data-article-name="${article.name}" data-article-price="${article.price}">Modifier</button>
+                                    <button class="btn btn-sm btn-info view-btn" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#viewModal" 
+                                            data-article-token="${article.token}" 
+                                            data-article-name="${article.name}" 
+                                            data-article-price="${article.price}">Afficher</button>
+                                    <button class="btn btn-sm btn-warning edit-btn" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#articleModal" 
+                                            data-article-token="${article.token}" 
+                                            data-article-name="${article.name}" 
+                                            data-article-price="${article.price}">Modifier</button>
                                     <button class="btn btn-sm btn-danger delete-btn" data-article-token="${article.token}">Supprimer</button>
                                 </td>
                             </tr>
@@ -290,7 +320,8 @@
             e.preventDefault();
             const form = $(this);
             const articleToken = $('#articleToken').val();
-            const url = articleToken ? `/articles/${articleToken}` : "{{ route('articles.store') }}";
+            // Assurez-vous que cette route existe : /articles ou /articles/{token}
+            const url = articleToken ? `/articles/${articleToken}` : "{{ route('articles.store') }}"; 
             const method = form.find('input[name="_method"]').val();
 
             showLoader();
@@ -302,12 +333,14 @@
                     $('#articleModal').modal('hide');
                     showNotification(response.message || 'Opération réussie !', true);
                     loadArticles();
-                    hideLoader();
+                    // Réinitialisation du formulaire après succès
+                    $('#articleForm')[0].reset();
+                    $('#articleModalLabel').text("Ajouter un article");
+                    $('input[name="_method"]').val('POST');
                 },
                 error: function(response) {
-                    const errorMessage = response.responseJSON.message || 'Une erreur est survenue.';
+                    const errorMessage = response.responseJSON?.message || 'Une erreur est survenue.';
                     showNotification(errorMessage, false);
-                    hideLoader();
                 }
             }).always(function() {
                 hideLoader();
@@ -326,6 +359,16 @@
             $('#articlePrice').val(articlePrice);
             $('input[name="_method"]').val('PUT');
         });
+        
+        // Logique pour le bouton Ajouter (Réinitialiser le modal)
+        $('[data-bs-target="#articleModal"]').on('click', function() {
+             if ($(this).hasClass('btn-primary')) { // Clic sur le bouton "Ajouter" principal
+                $('#articleForm')[0].reset();
+                $('#articleToken').val('');
+                $('#articleModalLabel').text("Ajouter un article");
+                $('input[name="_method"]').val('POST');
+            }
+        });
 
         // Suppression article
         $(document).on('click', '.delete-btn', function() {
@@ -340,7 +383,7 @@
                         loadArticles();
                     },
                     error: function(response) {
-                        showNotification(response.responseJSON.message || 'Erreur de suppression.', false);
+                        showNotification(response.responseJSON?.message || 'Erreur de suppression.', false);
                     }
                 }).always(function() {
                     hideLoader();
@@ -348,13 +391,19 @@
             }
         });
 
-        // Afficher le détail de l'article
+        // Afficher le détail de l'article et mettre à jour le lien d'impression
         $(document).on('click', '.view-btn', function() {
+            const articleToken = $(this).data('article-token');
             const articleName = $(this).data('article-name');
             const articlePrice = $(this).data('article-price');
             
             $('#viewName').text(articleName);
             $('#viewPrice').text(articlePrice ? articlePrice + ' FCFA' : 'Non défini');
+
+            // MISE À JOUR DU LIEN D'IMPRESSION
+            // Assurez-vous que la route `/articles/{token}/print` existe dans Laravel
+            const printUrl = `/articles/${articleToken}/print`;
+            $('#printCouponBtn').attr('href', printUrl);
         });
         
         $(document).ready(function() {

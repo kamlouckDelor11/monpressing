@@ -53,23 +53,22 @@
         </div>
         <div class="offcanvas-body d-flex flex-column p-0">
             <nav class="nav flex-column p-3">
-                <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
+                 <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
                 <a href="{{ route('order') }}" class="nav-link text-secondary">➕ Enregistrer un dépôt</a>
-                <a href="#" class="nav-link text-primary active">📦 Gérer les Dépôts</a>
-                <a href="{{ route('clients.index') }}" class="nav-link text-secondary">👤 Gérer les clients</a>
-                <a href="{{ route('articles.index') }}" class="nav-link text-secondary">👔 Gérer les articles</a>
-                <a href="{{ route('services.index') }}" class="nav-link text-secondary">🪣 Gérer les services</a>
+                <a href="{{ route('clients.index') }}" class="nav-link text-secondary">✅ Gestion des clients</a>
+                <a href="{{ route('articles.index') }}" class="nav-link text-secondary">✅ Gestion des articles</a>
+                <a href="{{ route('services.index') }}" class="nav-link text-secondary">✅ Gestion des services</a>
                 @if (Auth::User()->role === 'admin')
-                    <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑‍💼 Ajouter un gestionnaire</a>
+                    <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑 Gestionnaire</a>
                 @endif
                 <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
-                    <ul class="dropdown-menu">
-                        @if (Auth::User()->role === 'admin')
-                            <li><a class="dropdown-item" href="#">👥 Salaire</a></li>
-                        @endif
-                        <li><a class="dropdown-item" href="#">📦 Autres Dépenses</a></li>
-                    </ul>
+                <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
+                <ul class="dropdown-menu">
+                    @if (Auth::User()->role === 'admin')
+                    <li><a class="dropdown-item" href="{{ route('manager.payroll.index') }}">👥 Salaire</a></li>
+                    @endif  
+                    <li><a class="dropdown-item" href="{{ route('spenses.index') }}">📦 Autres Dépenses</a></li>
+                </ul>
                 </div>
                 @if (Auth::User()->role === 'admin')
                     <a href="#" class="nav-link text-secondary">📊 Statistiques</a>
@@ -178,7 +177,7 @@
     </div>
 
     {{-- ================================================= --}}
-    {{-- 🧩 MODALS (Gérer Statut, Encaissement, Notification, Loader) 🧩 --}}
+    {{-- 🧩 MODALS (Gérer Statut, Encaissement, Détails, Notification, Loader) 🧩 --}}
     {{-- ================================================= --}}
 
     {{-- Modal 1: Gérer le statut --}}
@@ -266,6 +265,58 @@
             </div>
         </div>
     </div>
+    
+    {{-- Modal 3: Détails du Dépôt (MODIFIÉ) --}}
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModalLabel">Détails du Dépôt: <span id="detailsReference" class="text-primary"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {{-- ... Votre contenu de détails (client, dates, statuts) ... --}}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Client:</strong> <span id="detailsClient"></span></p>
+                            <p><strong>Date Dépôt:</strong> <span id="detailsDepositDate"></span></p>
+                            <p><strong>Statut Livraison:</strong> <span id="detailsDeliveryStatus"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Saisie par:</strong> <span id="detailsUser"></span></p>
+                            <p><strong>Statut Paiement:</strong> <span id="detailsPaymentStatus"></span></p>
+                            <p><strong>Montant Total:</strong> <span id="detailsTotalAmount" class="fw-bold"></span> XAF</p>
+                        </div>
+                    </div>
+
+                    <h6 class="mt-3 mb-2 border-bottom pb-1">Articles Détaillés</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Quantité</th>
+                                    <th>Prix Unitaire</th>
+                                    <th>Total Article</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailsItemsBody">
+                                {{-- Les articles seront injectés ici --}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    {{-- NOUVEAU BOUTON D'IMPRESSION --}}
+                    <a id="printDepositCouponBtn" href="#" class="btn btn-success" target="_blank" title="Générer et imprimer le coupon de dépôt">
+                        <i class="bi bi-printer-fill"></i> Imprimer Coupon
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     {{-- Modal Utilitaire : Notification --}}
     <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
@@ -426,7 +477,7 @@
 
             // Gère le cas où la réponse est vide
             if (!ordersPaginationObject || !ordersPaginationObject.data || ordersPaginationObject.data.length === 0) {
-                tableBody.append('<tr><td colspan="7" class="text-center">Aucun dépôt trouvé pour ce filtre.</td></tr>');
+                tableBody.append('<tr><td colspan="7" class="text-center text-muted">Aucun dépôt trouvé pour ce filtre.</td></tr>');
                 return;
             }
 
@@ -436,7 +487,8 @@
                 const userName = order.user?.name ?? 'Utilisateur Inconnu';
                 
                 const date = new Date(order.deposit_date).toLocaleDateString('fr-FR');
-                const actionsHtml = `<button class="btn btn-sm btn-info me-1" title="Voir Détails">👁️</button>`;
+                // MODIFICATION : Ajout de la classe 'view-details-btn' et de l'attribut 'data-token'
+                const actionsHtml = `<button class="btn btn-sm btn-info me-1 view-details-btn" title="Voir Détails" data-token="${order.token}">👁️</button>`;
 
                 // 1. Ligne du Tableau (Grands Écrans)
                 const tableRow = `
@@ -534,13 +586,63 @@
                 })
                 .always(function() { hideLoader(); });
         }
+        
+        // NOUVEAU : Fonction pour afficher les détails du dépôt
+        function showOrderDetails(token) {
+            showLoader();
+            
+            // L'URL de l'API doit être définie dans vos routes Laravel (ex: /api/orders/{token}/details)
+            $.get(`/orders/${token}/details`) 
+                .done(function(data) {
+                    const order = data.order;
+                    const items = data.items || []; // S'assurer que vous recevez les articles
+
+                    // Remplir les informations principales
+                    $('#detailsReference').text(order.reference);
+                    $('#detailsClient').text(order.client_name); 
+                    $('#detailsDepositDate').text(new Date(order.deposit_date).toLocaleDateString('fr-FR'));
+                    $('#detailsDeliveryStatus').html(getStatusBadge(order.delivery_status));
+                    $('#detailsPaymentStatus').html(getPaymentBadge(order.payment_status));
+                    $('#detailsUser').text(order.user_name); 
+                    $('#detailsTotalAmount').text(parseFloat(order.total_amount).toFixed(2));
+
+                    // Remplir les articles détaillés
+                    const itemsBody = $('#detailsItemsBody').empty();
+                    if (items.length > 0) {
+                        items.forEach(item => {
+                            const row = `
+                                <tr>
+                                    <td>${item.service_name}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${parseFloat(item.unit_price).toFixed(2)} XAF</td>
+                                    <td>${parseFloat(item.quantity * item.unit_price).toFixed(2)} XAF</td>
+                                </tr>
+                            `;
+                            itemsBody.append(row);
+                        });
+                    } else {
+                        itemsBody.append('<tr><td colspan="4" class="text-center text-muted">Aucun article détaillé.</td></tr>');
+                    }
+
+                    // Générer l'URL d'impression et l'injecter dans l'attribut href
+                    const printUrl = `/orders/${token}/print`; 
+                    $('#printDepositCouponBtn').attr('href', printUrl);
+            
+
+                    $('#detailsModal').modal('show');
+                })
+                .fail(function(xhr) {
+                    const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : "Erreur lors du chargement des détails du dépôt.";
+                    showNotification(msg, false);
+                })
+                .always(function() { hideLoader(); });
+        }
+
 
         // --- 5. Initialisation et Écouteurs d'Événements ---
 
         $(document).ready(function() {
             loadModalReferences();
-            // 🚫 ATTENTION : filterOrders(1); a été retiré pour des raisons de performance.
-            // La table affichera un message invitant à filtrer.
         });
 
         // Soumission Filtre
@@ -555,6 +657,15 @@
             filterOrders(1); 
             showNotification("Le filtre a été réinitialisé et les résultats rechargés.", true);
         });
+        
+        // NOUVEAU : Écouteur pour le bouton "Voir Détails"
+        $('#ordersTableContainer').on('click', '.view-details-btn', function() {
+            const token = $(this).data('token');
+            if (token) {
+                showOrderDetails(token);
+            }
+        });
+
 
         // Écouteur pour Gérer Statut
         $('#orderTokenSelectStatus').on('change', function() {
@@ -629,7 +740,7 @@
             });
         });
         
-        // Réinitialisation des champs lors de la fermeture des modals
+        // Réinitialisation des champs lors de la fermeture des modals (Gérer Statut et Encaissement)
         $('.reset-on-close').on('click', function() {
             $('#manageStatusForm')[0].reset();
             $('#cashInForm')[0].reset();

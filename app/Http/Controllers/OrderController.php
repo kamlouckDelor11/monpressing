@@ -8,6 +8,7 @@ use App\Models\Service;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\Pressing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Validator;
 use Exception;
 use App\Models\Transaction; 
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderController extends Controller
 {
@@ -347,5 +349,68 @@ class OrderController extends Controller
             'orders' => $orders,
             'message' => 'Dépôts chargés avec succès.',
         ]);
+    }
+
+    public function showDetails($token)
+    {
+        $order = Order::with(['client', 'user', 'items.service']) // Chargez les relations nécessaires
+                    ->where('token', $token)
+                    ->firstOrFail();
+
+        // Transformez les données pour la réponse JSON
+        $itemsData = $order->items->map(function ($item) {
+                $articleName = $item->article?->name ?? '';
+                $serviceName = $item->service?->name ?? 'Service Lavomatic';
+            return [
+
+                'service_name' => $articleName . '-' . $serviceName,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+            ];
+        });
+
+        return response()->json([
+            'order' => [
+                'reference' => $order->reference,
+                'client_name' => $order->client->name,
+                'user_name' => $order->user->name,
+                'deposit_date' => $order->deposit_date,
+                'delivery_status' => $order->delivery_status,
+                'payment_status' => $order->payment_status,
+                'total_amount' => $order->total_amount,
+            ],
+            'items' => $itemsData,
+        ]);
+    }
+
+
+    public function generateCouponPdf(string $token)
+    {
+        // Augmenter le temps d'exécution (solution temporaire mais nécessaire)
+        set_time_limit(300); 
+    
+        // 🚀 AJOUTEZ CETTE LIGNE : Augmenter la limite de mémoire à 512M
+        ini_set('memory_limit', '512M');
+
+        // Récupérer le dépôt avec toutes ses relations nécessaires
+        // 'items.article' et 'items.service' sont cruciaux pour les détails du coupon.
+       $order = Order::with(['client', 'user', 'items.article', 'items.service'])
+                      ->where('token', $token)
+                      ->firstOrFail();
+
+        // 🚀 LOGIQUE CLÉ : Récupérer le token du pressing de l'utilisateur
+        $userPressingToken = Auth::user()->pressing_token;
+        
+        // 🚀 Récupérer le nom du pressing en utilisant ce token
+        $pressingName = Pressing::where('token', $userPressingToken)->first()->name 
+                        ?? config('app.name', 'Nom du Pressing Inconnu');
+        
+        // Nous passons $pressingName à la vue.
+        $pdf = Pdf::loadView('pdf.deposit-coupon', compact('order', 'pressingName')); 
+
+        return $pdf->download('coupon_depot_' . $order->reference . '.pdf');
+
+        // OU Option B: Afficher le PDF dans le navigateur (pour le test)
+        // return $pdf->stream('coupon_depot_' . $order->reference . '.pdf');
     }
 }

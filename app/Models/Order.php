@@ -76,4 +76,14 @@ class Order extends Model
         
         return $this->belongsTo(User::class, 'user_token', 'token');
     }
+
+    /**
+     * Obtenir les articles (lignes de commande) associés à ce dépôt.
+     */
+    public function items()
+    {
+
+        return $this->hasMany(OrderItem::class, 'order_token', 'token'); 
+
+    }
 }

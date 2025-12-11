@@ -16,7 +16,8 @@ return new class extends Migration
             $table->uuid('token')->primary();
             $table->string('pressing_token');
             $table->foreign('pressing_token')
-                  ->references('token')->on('pressings')
+                  ->references('token')
+                  ->on('pressings')
                   ->onDelete('cascade');
 
             $table->string('name');
