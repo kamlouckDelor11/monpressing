@@ -11,6 +11,7 @@ use App\Models\Employe;
 use App\Models\Paie;
 use App\Models\ItemPaie;
 use App\Models\Depense; // Assurez-vous d'importer votre modèle Depense
+use App\Models\ItemSpens;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -252,16 +253,16 @@ class PayrollController extends Controller
         }
 
         // Enregistrement de la dépense
-        Depense::create([
-            'token' => Str::uuid(),
-            'description' => $request->description,
-            'amount' => $request->amount,
-            'payment_mode' => $request->payment_mode,
-            'transaction_date' => $request->transaction_date,
-            'pressing_token' => $this->getPressingToken(),
-            'user_token' => Auth::user()->token,
-            // Optionnel: 'paie_token' si vous voulez le lier dans la table depenses
-        ]);
+        // ItemSpens::create([
+        //     'token' => Str::uuid(),
+        //     'description' => $request->description,
+        //     'amount_spens' => $request->amount,
+        //     'payment_mode' => $request->payment_mode,
+        //     'date_spens' => $request->transaction_date,
+        //     'pressing_token' => $this->getPressingToken(),
+        //     'user_token' => Auth::user()->token,
+        //     // Optionnel: 'paie_token' si vous voulez le lier dans la table depenses
+        // ]);
 
         // Mise à jour du statut de la paie
         $paie->update(['status' => 'paid']);
