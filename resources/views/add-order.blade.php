@@ -22,44 +22,10 @@
     </style>
 </head>
 <body class="d-flex">
+    {{-- loader --}}
+    @include('partials.loader')
     
-    <aside class="offcanvas-lg offcanvas-start bg-body-tertiary border-end" tabindex="-1" id="sidebar">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title text-primary fw-bold">🧺 Pressing Manager</h5>
-            <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body d-flex flex-column p-0">
-            <nav class="nav flex-column p-3">
-                 <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
-                <a href="{{ route('clients.index') }}" class="nav-link text-secondary">✅ Gestion des clients</a>
-                <a href="{{ route('manager.order') }}" class="nav-link text-secondary">✅ Gestion des dépôts</a>
-                <a href="{{ route('articles.index') }}" class="nav-link text-secondary">✅ Gestion des articles</a>
-                <a href="{{ route('services.index') }}" class="nav-link text-secondary">✅ Gestion des services</a>
-                @if (Auth::User()->role === 'admin')
-                    <a href="{{ route('manager.gestionnaire') }}" class="nav-link text-secondary">🧑 Gestionnaire</a>
-                @endif
-                <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
-                <ul class="dropdown-menu">
-                    @if (Auth::User()->role === 'admin')
-                    <li><a class="dropdown-item" href="{{ route('manager.payroll.index') }}">👥 Salaire</a></li>
-                    @endif  
-                    <li><a class="dropdown-item" href="{{ route('spenses.index') }}">📦 Autres Dépenses</a></li>
-                </ul>
-                </div>
-                @if (Auth::User()->role === 'admin')
-                    <a href="#" class="nav-link text-secondary">📊 Statistiques</a>
-                @endif
-                <a href="#" class="nav-link text-secondary">⚙️ Paramètres</a>
-            </nav>
-            <div class="mt-auto p-3 border-top">
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-danger w-100">🚪 Déconnexion</button>
-                </form>
-            </div>
-        </div>
-    </aside>
+    @include('partials.side-bar')
 
     <div class="flex-grow-1 d-flex flex-column min-vh-100">
         <header class="d-flex justify-content-between align-items-center px-4 py-3 border-bottom bg-body shadow-sm">
@@ -100,7 +66,7 @@
                                         <label for="clientSearchInput" class="form-label">Rechercher un client (par téléphone)</label>
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="clientSearchInput" placeholder="Ex: 0612345678">
-                                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createClientModal">+</button>
+                                            <button type="button" class="btn btn-outline-primary" id="openCreateClientModalBtn">+</button>
                                         </div>
                                         <small id="clientSearchStatus" class="form-text text-muted"></small>
                                     </div>
@@ -136,7 +102,7 @@
                                             <label for="articleSearchInput" class="form-label">Article</label>
                                             <div class="input-group">
                                                 <input type="text" class="form-control" id="articleSearchInput" placeholder="Rechercher un article...">
-                                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createArticleModal">+</button>
+                                                <button type="button" class="btn btn-outline-primary" id="openCreateArticleModalBtn">+</button>
                                             </div>
                                             <div id="articleSearchResults" class="list-group position-absolute w-100 mt-1" style="z-index: 1050;"></div>
                                             <input type="hidden" id="selectedArticleToken">
@@ -145,7 +111,7 @@
                                             <label for="serviceSelect" class="form-label">Service</label>
                                             <select class="form-select" id="serviceSelect"></select>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             <label for="pressingUnitPrice" class="form-label">Prix unitaire (XAF)</label>
                                             <input type="number" step="0.01" class="form-control" id="pressingUnitPrice" placeholder="Prix">
                                         </div>
@@ -153,7 +119,7 @@
                                             <label for="pressingQuantity" class="form-label">Qté</label>
                                             <input type="number" class="form-control" id="pressingQuantity" value="1" min="1">
                                         </div>
-                                        <div class="col-md-1 align-self-end">
+                                        <div class="col-md-2 align-self-end">
                                             <button type="button" class="btn btn-success w-100" id="addToPressingCartBtn">Ajouter</button>
                                         </div>
                                     </div>
@@ -225,7 +191,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="createClientModal" tabindex="-1" aria-labelledby="createClientModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createClientModal" tabindex="-1" aria-labelledby="createClientModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -233,7 +199,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="reateClientForm" method="POST" action="{{ route('clients.store') }}">
+                    <form id="createClientForm" method="POST" action="{{ route('clients.store') }}">
                         @csrf
                         <input type="hidden" name="_method" value="POST">
                         <input type="hidden" name="id" id="clientId">
@@ -253,13 +219,13 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" form="createClientForm" class="btn btn-primary">Enregistrer</button>
+                    <button type="submit" form="createClientForm" class="btn btn-primary">Enregistrer le client</button>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="modal fade" id="createArticleModal" tabindex="-1" aria-labelledby="createArticleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createArticleModal" tabindex="-1" aria-labelledby="createArticleModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -691,31 +657,82 @@
             });
         });
 
-        // Envoi du formulaire client
-        $('#reateClientForm').on('submit', function(e) {
-            e.preventDefault();
-             
-           const form = $(this);
-            const clientId = $('#clientId').val();
-            const method = form.find('input[name="_method"]').val();
-            const url = clientId ? `/clients/${clientId}` : "{{ route('clients.store') }}";
+        // --- GESTION DES MODALES IMBRIQUÉES (CLIENT & ARTICLE) ---
 
-            showLoader()
+        // Ouvrir le modal Client sans fermer le modal Order
+        $('#openCreateClientModalBtn').on('click', function() {
+            $('#createClientModal').modal('show');
+        });
+
+        // Ouvrir le modal Article sans fermer le modal Order
+        $('#openCreateArticleModalBtn').on('click', function() {
+            $('#createArticleModal').modal('show');
+        });
+
+        // Soumission AJAX du formulaire Client
+        $('#createClientForm').on('submit', function(e) {
+            e.preventDefault();
+            const form = $(this);
+            const url = form.attr('action');
+
+            showLoader();
             $.ajax({
                 url: url,
-                method: method,
+                method: 'POST',
                 data: form.serialize(),
                 success: function(response) {
-                    $('#clientModal').modal('hide');
-                    showNotification(response.message || 'Opération réussie !', true);
-                    loadClients(); // Mise à jour de la liste
-                    hideLoader()
+                    hideLoader();
+                    $('#createClientModal').modal('hide');
+                    showNotification(response.message || 'Client créé avec succès !', true);
+                    
+                    // Mise à jour automatique du formulaire principal
+                    if (response.client) {
+                        $('#clientSearchInput').val(response.client.phone);
+                        $('#clientNameInput').val(response.client.name);
+                        $('#clientToken').val(response.client.token);
+                        selectedClient = response.client;
+                        $('#clientSearchStatus').html(`Client sélectionné : <span class="text-success">${response.client.name}</span>`);
+                    }
+                    form[0].reset();
                 },
                 error: function(response) {
-                    const errorMessage = response.responseJSON.message || 'Une erreur est survenue.';
+                    hideLoader();
+                    const errorMessage = response.responseJSON?.message || 'Erreur lors de la création du client.';
                     showNotification(errorMessage, false);
-                    hideLoader()
+                }
+            });
+        });
 
+        // Soumission AJAX du formulaire Article
+        $('#createArticleForm').on('submit', function(e) {
+            e.preventDefault();
+            const form = $(this);
+            // On suppose que la route est /articles (store)
+            const url = "{{ route('articles.store') }}"; 
+
+            showLoader();
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    hideLoader();
+                    $('#createArticleModal').modal('hide');
+                    showNotification(response.message || 'Article créé avec succès !', true);
+
+                    // Mise à jour automatique du formulaire principal
+                    if (response.article) {
+                        $('#articleSearchInput').val(response.article.name);
+                        $('#selectedArticleToken').val(response.article.token);
+                        // On cache les résultats de recherche car on a sélectionné l'article
+                        $('#articleSearchResults').hide();
+                    }
+                    form[0].reset();
+                },
+                error: function(response) {
+                    hideLoader();
+                    const errorMessage = response.responseJSON?.message || 'Erreur lors de la création de l\'article.';
+                    showNotification(errorMessage, false);
                 }
             });
         });

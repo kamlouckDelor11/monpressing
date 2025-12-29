@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('email')->unique()->nullable();
             $table->string('address')->nullable();
             $table->string('subscription_plan')->default('basic');
+            $table->date('last_subscription_at')->nullable();
             $table->date('subscription_expires_at')->nullable();
             $table->string('logo')->nullable();
             $table->string('niu')->nullable();

@@ -50,6 +50,8 @@
     </style>
 </head>
 <body class="d-flex">
+    {{-- loader --}}
+    @include('partials.loader')
     
     <div id="sidebar" class="bg-dark text-white p-3 shadow-lg">
         <div class="d-flex justify-content-between align-items-center mb-4">

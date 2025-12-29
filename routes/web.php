@@ -10,6 +10,11 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\SpensController;
+use App\Http\Controllers\PasswordUpdateController;
+use App\Http\Controllers\StatisticController;
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\ForcePasswordUpdate;
 
 Route::get('/', function () {
     return view('welcome');
@@ -19,7 +24,7 @@ Route::get('/register', function () {
     return view('create');
 })->name('create');
 
-Route::middleware(['web', 'auth'])->group(function () {
+Route::middleware(['web', 'auth', ForcePasswordUpdate::class, ])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
@@ -34,7 +39,7 @@ Route::post('create/store',[PressingController::class, 'store'])->name('create.s
 
 
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'force.password', EnsureUserIsActive::class])->group(function () {
 
     /**
      * les routes de la gestion cleint
@@ -115,7 +120,7 @@ Route::middleware(['auth'])->group(function () {
 
 
 // Assurez-vous que l'admin est connecté et a le bon rôle
-Route::middleware(['auth', 'admin'])->prefix('manager')->group(function () {
+Route::middleware(['auth', 'force.password', AdminMiddleware::class, EnsureUserIsActive::class])->prefix('manager')->group(function () {
     
     // Page de gestion (GET)
     Route::get('/gestionnaire', [ManagerController::class, 'index'])->name('manager.gestionnaire');
@@ -127,7 +132,7 @@ Route::middleware(['auth', 'admin'])->prefix('manager')->group(function () {
     Route::post('/user/store', [ManagerController::class, 'storeUser'])->name('manager.user.store');
     
     // Modification d'un utilisateur (PUT/PATCH)
-    Route::post('/user/update/{user:token}', [ManagerController::class, 'updateUser'])->name('manager.user.update');
+    Route::put('/user/update/{user:token}', [ManagerController::class, 'updateUser'])->name('manager.user.update');
 
 
     Route::prefix('payroll')->group(function () {
@@ -165,6 +170,56 @@ Route::middleware(['auth', 'admin'])->prefix('manager')->group(function () {
 
     });
 
+    // Page principale (charge l'initialisation)
+    Route::get('/statistics', [StatisticController::class, 'index'])->name('statistics');
+    
+    // --- API/AJAX endpoints ---
+
+    // Récupérer la table des objectifs (pour pagination/rechargement)
+    Route::get('/statistics/goals-table', [StatisticController::class, 'goalsTable'])->name('manager.goals.table');
+
+    // Récupérer les données des graphiques (pour le filtre annuel)
+    Route::get('/statistics/chart-data', [StatisticController::class, 'chartData'])->name('manager.chart.data');
+
+    // --- Objectifs CRUD (Formulaires AJAX) ---
+    Route::post('/goals', [StatisticController::class, 'storeGoal'])->name('manager.goals.store');
+    Route::put('/goals/{goal:token}', [StatisticController::class, 'updateGoal'])->name('manager.goals.update');
+    Route::delete('/goals/{goal:token}', [StatisticController::class, 'destroyGoal'])->name('manager.goals.destroy');
+    Route::get('/goals/get-edit-form/{token}', [StatisticController::class, 'getEditForm'])->name('manager.goals.get-edit-form');
 });
 
 
+
+// ... vos autres routes ...
+
+Route::middleware(['auth', 'force.password',])->group(function () {
+    
+
+    // ROUTES SPÉCIFIQUES AU MANAGER (API INTERNE)
+    Route::prefix('manager-api')->group(function () {
+        
+        // Route pour récupérer la liste des pressings (AJAX)
+        Route::get('/pressings', [ManagerController::class, 'getPressingsApi'])
+            ->name('manager.api.pressings');
+
+        // Route pour mettre à jour un pressing (Abonnement / Désactivation)
+        Route::post('/pressings/update', [ManagerController::class, 'updatePressingApi'])
+            ->name('manager.api.pressings.update');
+
+            // ... à l'intérieur de Route::prefix('manager-api')->group(function () {
+
+        // Récupérer la liste des utilisateurs (Pagination AJAX)
+        Route::get('/users', [ManagerController::class, 'getUsersApi'])
+            ->name('manager.api.users');
+
+        // Réinitialiser le mot de passe d'un utilisateur
+        Route::post('/users/reset-password', [ManagerController::class, 'resetUserPasswordApi'])
+            ->name('manager.api.users.reset-password');
+            
+    });
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/password/update-required', [PasswordUpdateController::class, 'showUpdateForm'])->name('password.update.required');
+    Route::post('/password/update-store', [PasswordUpdateController::class, 'updatePassword'])->name('password.update.store');
+});

@@ -11,7 +11,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        /* Styles pour le Loader */
+        /* Styles pour le Loader Global (Centré) */
         #loaderOverlay {
             position: fixed;
             top: 0;
@@ -20,10 +20,24 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.7);
             z-index: 2000;
-            display: none; /* Caché par défaut */
+            display: flex;
             justify-content: center;
             align-items: center;
+            opacity: 0; 
+            pointer-events: none;
+            transition: opacity 0.1s ease-in-out;
         }
+        .loader-visible {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        /* Assure que l'alerte de validation est au-dessus de la modale du formulaire */
+        #alertContainer {
+            z-index: 1060; 
+            position: relative; 
+        }
+
         #sidebar { min-height: 100vh; }
         #userTableWrapper { max-height: 500px; overflow-y: auto; }
         .active-status { color: green; font-weight: bold; }
@@ -32,41 +46,14 @@
 </head>
 <body class="d-flex">
 
+    {{-- LOADER GLOBAL (Utilisé UNIQUEMENT pour le chargement initial) --}}
     <div id="loaderOverlay">
         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
             <span class="visually-hidden">Chargement...</span>
         </div>
     </div>
 
-    <aside class="offcanvas-lg offcanvas-start bg-body-tertiary border-end" tabindex="-1" id="sidebar">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title text-primary fw-bold">🧺 Pressing Manager</h5>
-            <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body d-flex flex-column">
-            <nav class="nav flex-column p-3">
-                 <a href="{{ route('dashboard') }}" class="nav-link text-secondary">🏠 Tableau de bord</a>
-                <a href="{{ route('order') }}" class="nav-link text-secondary">➕ Enregistrer un dépôt</a>
-                <a href="{{ route('clients.index') }}" class="nav-link text-secondary">✅ Gestion des clients</a>
-                <a href="{{ route('manager.order') }}" class="nav-link text-secondary">✅ Gestion des dépôts</a>
-                <a href="{{ route('articles.index') }}" class="nav-link text-secondary">✅ Gestion des articles</a>
-                <a href="{{ route('services.index') }}" class="nav-link text-secondary">✅ Gestion des services</a>
-                <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" href="#">💰 Charges</a>
-                <ul class="dropdown-menu">
-                    @if (Auth::User()->role === 'admin')
-                    <li><a class="dropdown-item" href="{{ route('manager.payroll.index') }}">👥 Salaire</a></li>
-                    @endif  
-                    <li><a class="dropdown-item" href="{{ route('spenses.index') }}">📦 Autres Dépenses</a></li>
-                </ul>
-                </div>
-                @if (Auth::User()->role === 'admin')
-                    <a href="#" class="nav-link text-secondary">📊 Statistiques</a>
-                @endif
-                <a href="#" class="nav-link text-secondary">⚙️ Paramètres</a>
-            </nav>
-        </div>
-    </aside>
+    @include('partials.side-bar')
 
     <div class="flex-grow-1 d-flex flex-column">
 
@@ -79,13 +66,13 @@
         </header>
 
         <main class="flex-grow-1 container py-4">
+            
+            <div id="alertContainer" class="mb-3" style="display: none;">
+                </div>
 
             <div class="d-flex justify-content-end mb-3">
                 <button id="createUserBtn" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalUser">➕ Ajouter un utilisateur</button>
             </div>
-
-            <div id="alertContainer" class="mb-3" style="display: none;">
-                </div>
 
             <div class="card shadow-sm">
                 <div class="card-body">
@@ -115,6 +102,7 @@
         </main>
     </div>
 
+    {{-- MODALE CRÉATION/MODIFICATION --}}
     <div class="modal fade" id="modalUser" tabindex="-1" aria-labelledby="modalUserLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -158,13 +146,18 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-primary" id="submitBtn">Enregistrer</button>
+                        {{-- BOUTON DE SOUMISSION AVEC SPINNER INTÉGRÉ --}}
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span id="buttonSpinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                            <span id="buttonText">Enregistrer</span>
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    {{-- TOAST --}}
     <div class="position-fixed top-0 end-0 p-3" style="z-index:1080">
         <div id="liveToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
@@ -184,13 +177,26 @@
         // --- Variables Globales ---
         let users = []; 
         let currentPage = 1;
-        const perPage = 5; // Nombre d'utilisateurs par page pour le frontend
+        const perPage = 5; 
 
         // --- UTILS ---
         
-        // Loader
-        function showLoader() { $('#loaderOverlay').fadeIn(100); }
-        function hideLoader() { $('#loaderOverlay').fadeOut(100); }
+        // Loader Global (pour le chargement des données)
+        function showLoader() { $('#loaderOverlay').addClass('loader-visible'); }
+        function hideLoader() { $('#loaderOverlay').removeClass('loader-visible'); }
+
+        // Loader Bouton (pour la soumission du formulaire)
+        function showButtonLoader(text) {
+            $('#buttonText').text(text);
+            $('#buttonSpinner').show();
+            $('#submitBtn').prop('disabled', true);
+        }
+
+        function hideButtonLoader(defaultText) {
+            $('#buttonText').text(defaultText);
+            $('#buttonSpinner').hide();
+            $('#submitBtn').prop('disabled', false);
+        }
 
         // Toast
         const toastElement = document.getElementById('liveToast');
@@ -245,7 +251,7 @@
                 nav.html(html);
 
                 // Écouteur de clic pour la pagination
-                nav.find('.page-link').on('click', function(e) {
+                nav.find('.page-link').off('click').on('click', function(e) {
                     e.preventDefault();
                     const page = parseInt($(this).data('page'));
                     if (!isNaN(page) && page >= 1 && page <= data.last_page) {
@@ -279,7 +285,6 @@
                         <td>${user.role}</td>
                         <td class="${statusClass}">${status}</td>
                         <td class="d-flex gap-1 flex-wrap">
-                            {{-- Utilise user.token comme data-id --}}
                             <button class="btn btn-sm btn-primary btnEdit" data-id="${user.token}">✏️ Modifier</button>
                         </td>
                     </tr>`;
@@ -290,8 +295,8 @@
 
         // --- LOGIQUE AJAX ---
 
-        // 1. Charger la liste des utilisateurs (avec pagination)
         function loadUsers(page = 1) {
+            // Utilisation du loader global
             showLoader();
             $.ajax({
                 url: '{{ route("manager.users.index") }}' + `?page=${page}`,
@@ -305,24 +310,20 @@
                     $('#userTableBody').html('<tr><td colspan="6" class="text-center text-danger">Échec du chargement des données.</td></tr>');
                     $('#paginationLinks').empty();
                 },
-                complete: function() { hideLoader(); }
+                complete: function() { hideLoader(); } 
             });
         }
 
-        // 2. Préparer la modale pour l'édition
-        function editUser(token) { // Change l'argument pour accepter le token
-             // Cherche l'utilisateur par token, pas par id
+        function editUser(token) { 
             const user = users.find(u => u.token == token); 
             if (!user) {
                 showToast("Utilisateur non trouvé.", 'danger');
                 return;
             }
 
-            // Réinitialiser les alertes
             $('#alertContainer').slideUp();
             
-            // Mettre à jour les champs
-            $('#userId').val(user.token); // Met le token dans le champ caché
+            $('#userId').val(user.token); 
             $('#userName').val(user.name);
             $('#userEmail').val(user.email);
             $('#userPhone').val(user.phone);
@@ -332,64 +333,72 @@
             $('#userPassword').val(''); 
             $('#userPassword').attr('placeholder', 'Laisser vide pour ne pas changer');
             
-            // Afficher les champs de modification et mettre à jour le titre
             $('#editFields').show();
-             // Utilise le token dans la route de mise à jour
             $('#modalUserLabel').text("Modifier l'utilisateur: " + user.name);
             $('#formUser').attr('action', '{{ route("manager.user.update", ["user" => ":token"]) }}'.replace(':token', user.token)); 
-            $('#submitBtn').text('Sauvegarder les modifications');
+            
+            hideButtonLoader('Sauvegarder les modifications'); 
 
-            // Ouvrir la modale
             new bootstrap.Modal(document.getElementById('modalUser')).show();
         }
 
         // --- ÉCOUTEURS D'ÉVÉNEMENTS ---
 
         function attachUserListeners() {
-            // Écouteur pour l'édition
             $('.btnEdit').off('click').on('click', function() {
-                // Passe le data-id (qui est le token) à editUser
                 editUser($(this).data('id')); 
             });
         }
 
+        // Fonction de nettoyage pour retirer le backdrop qui bloque la page
+        function cleanModalBackdrop() {
+            // Retirer explicitement le backdrop s'il est resté
+            $('.modal-backdrop').remove();
+            // Retirer la classe de blocage de défilement du body
+            $('body').removeClass('modal-open').css('overflow', '');
+        }
+
         $(document).ready(function() {
+            showLoader(); 
             loadUsers(currentPage);
 
-            // Clic sur "Ajouter un utilisateur" : réinitialise la modale en mode création
             $('#createUserBtn').on('click', function() {
                 $('#formUser')[0].reset();
                 $('#userId').val('');
                 $('#userPassword').attr('placeholder', 'Mot de passe (requis)');
                 
-                // Cacher les champs de modification spécifiques
                 $('#editFields').hide();
                 
                 $('#modalUserLabel').text("Ajouter un nouvel utilisateur");
                 $('#formUser').attr('action', '{{ route("manager.user.store") }}');
-                $('#submitBtn').text('Créer l\'utilisateur');
+                hideButtonLoader('Créer l\'utilisateur'); 
                 $('#alertContainer').slideUp();
             });
 
             // Soumission du formulaire (Création ou Modification)
             $('#formUser').on('submit', function(e) {
                 e.preventDefault();
-                showLoader();
                 $('#alertContainer').slideUp(); 
 
                 const form = $(this);
                 const isUpdating = $('#userId').val() !== '';
                 const url = form.attr('action');
                 
-                // Déterminer la méthode HTTP pour l'appel AJAX
-                // Si c'est une mise à jour (token est présent), on utilise PUT. Sinon POST.
-                let httpMethod = isUpdating ? 'PUT' : 'POST'; 
-                // Serialisation des données du formulaire
+                const loadingText = isUpdating ? 'Sauvegarde...' : 'Création...';
+                const defaultText = isUpdating ? 'Sauvegarder les modifications' : 'Créer l\'utilisateur';
+                showButtonLoader(loadingText); 
+                
+                form.find('input[name="_method"]').remove();
+                
+                if (isUpdating) {
+                    form.append('<input type="hidden" name="_method" value="PUT">');
+                }
+                
                 let data = form.serialize();
 
                 $.ajax({
                     url: url,
-                    method: 'post', // C'est ici que la méthode PUT est envoyée
+                    method: 'POST', 
                     data: data,
                     success: function(response) {
                         $('#modalUser').modal('hide');
@@ -404,17 +413,30 @@
                             $.each(errors, function(k, v) { list += "<li>" + v[0] + "</li>"; });
                             list += "</ul>";
                             showAlert('danger', "<strong>Erreur de validation:</strong> " + list);
+                        } else if (xhr.status === 405) {
+                            showAlert('danger', "❌ Erreur 405: Méthode non autorisée. Vérifiez la route Laravel et le champ _method.");
                         } else {
-                            showAlert('danger', "❌ Une erreur est survenue lors de l'opération ou vous n'avez pas la permission (Vérifiez la console).");
+                            showAlert('danger', `❌ Une erreur est survenue (Status: ${xhr.status}).`);
                         }
+                        
+                        // En cas d'erreur AJAX, le backdrop pourrait être laissé si la modale n'est pas fermée
+                        cleanModalBackdrop();
                     },
-                    complete: function() { hideLoader(); }
+                    complete: function() { 
+                        // Fermeture du loader du bouton et nettoyage
+                        hideButtonLoader(defaultText);
+                        $('#formUser').find('input[name="_method"]').remove();
+                    }
                 });
             });
 
-            // Gérer la fermeture de la modale pour cacher les alertes
+            // Gérer la fermeture de la modale par l'utilisateur ou par le succès AJAX
             document.getElementById('modalUser').addEventListener('hidden.bs.modal', function () {
                 $('#alertContainer').slideUp();
+                // CORRECTION CRITIQUE: Exécuter la fonction de nettoyage après la fermeture de la modale
+                // C'est l'événement 'hidden' qui se déclenche lorsque Bootstrap a fini de cacher la modale,
+                // ce qui est le moment idéal pour garantir le nettoyage du DOM.
+                cleanModalBackdrop();
             });
 
             // Dark Mode

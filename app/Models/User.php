@@ -34,6 +34,7 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
+        'update_password'
     ];
 
     /**
@@ -56,6 +57,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            
         ];
     }
 
@@ -74,4 +76,10 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Pressing::class, 'pressing_token', 'token');
     }
+
+      public function goals()
+    {
+        return $this->hasMany(Goal::class, 'user_token', 'token');
+    }
+
 }

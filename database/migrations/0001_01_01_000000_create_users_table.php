@@ -27,10 +27,10 @@ return new class extends Migration
             $table->string('profile')->nullable();
             $table->string('password');
 
-            $table->enum('role', ['admin', 'caissier', 'employe'])->default('employe');
+            $table->enum('role', ['manager', 'admin', 'caissier', 'employe'])->default('employe');
             $table->enum('status', ['active', 'inactive'])->default('active');
 
-            $table->timestamp('update_password')->nullable();
+            $table->integer('update_password')->nullable();
             $table->timestamp('last_login_at')->nullable();
             $table->rememberToken();
             $table->timestamps();

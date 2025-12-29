@@ -250,6 +250,8 @@
     </style>
 </head>
 <body class="d-flex">
+    {{-- loader --}}
+    @include('partials.loader')
     
     <div id="flash-message-container"></div>
     

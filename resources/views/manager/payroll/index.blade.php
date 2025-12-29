@@ -96,6 +96,8 @@
     </style>
 </head>
 <body class="d-flex">
+    {{-- loader --}}
+    @include('partials.loader')
     
     <div id="sidebar" class="bg-dark text-white p-3 shadow-lg">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -179,7 +181,13 @@
 
                 {{-- TAB 2: Création de la Paie --}}
                 <div class="tab-pane fade" id="creation" role="tabpanel">
-                    <div class="card shadow-sm">
+                    <div class="card shadow-sm position-relative">
+                        {{-- Loader spécifique Création --}}
+                        <div id="creationLoader" class="position-absolute top-0 start-0 w-100 h-100 d-none justify-content-center align-items-center" style="background: rgba(255,255,255,0.8); z-index: 10; border-radius: inherit;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
                         <div class="card-body">
                             <h5 class="card-title">Comptabilisation de la Paie</h5>
                             
@@ -218,7 +226,13 @@
 
                 {{-- TAB 3: Règlement des Paies --}}
                 <div class="tab-pane fade" id="paiement" role="tabpanel">
-                    <div class="card shadow-sm">
+                    <div class="card shadow-sm position-relative">
+                        {{-- Loader spécifique Paiement --}}
+                        <div id="paymentLoader" class="position-absolute top-0 start-0 w-100 h-100 d-none justify-content-center align-items-center" style="background: rgba(255,255,255,0.8); z-index: 10; border-radius: inherit;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
                         <div class="card-body">
                             <h5 class="card-title">Interface de Paiement</h5>
                             <form id="payPaieForm">
@@ -283,7 +297,13 @@
     
     <div class="modal fade" id="modalEmploye" tabindex="-1" aria-labelledby="modalEmployeLabel" aria-hidden="true">
         <div class="modal-dialog modal-fullscreen-md-down">
-            <div class="modal-content">
+            <div class="modal-content position-relative">
+                {{-- Loader spécifique au modal (Centré) --}}
+                <div id="modalEmployeLoader" class="position-absolute top-0 start-0 w-100 h-100 d-none justify-content-center align-items-center" style="background: rgba(255,255,255,0.8); z-index: 1056; border-radius: inherit;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                </div>
                 <form id="formEmploye">
                     @csrf
                     <div class="modal-header">
@@ -347,6 +367,12 @@
          */
         function showAlert(type, message) {
             $('#alertContainer').html(`<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`).slideDown();
+        }
+
+        // Fonction de nettoyage pour retirer le backdrop qui bloque la page (Fix navigation bloquée)
+        function cleanModalBackdrop() {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css('overflow', '');
         }
 
         // --- EMPLOYÉ LOGIC (TAB 1) ---
@@ -645,7 +671,8 @@
             // 1. Soumission du formulaire Employé
             $('#formEmploye').on('submit', function(e) {
                 e.preventDefault();
-                showLoader();
+                // Utilisation du loader interne au modal
+                $('#modalEmployeLoader').removeClass('d-none').addClass('d-flex');
                 
                 const token = $('#employeToken').val();
                 const isUpdating = token !== '';
@@ -663,15 +690,16 @@
                     method: method,
                     data: data,
                     success: function(response) {
-                        $('#modalEmploye').modal('hide');
-                        showToast(response.message);
-                        loadEmployes(1); 
+                        // Rechargement de la page pour résoudre les problèmes de backdrop
+                        window.location.reload();
                     },
                     error: function(xhr) {
                         const errorMessage = xhr.responseJSON.message || "Erreur lors de l'enregistrement de l'employé.";
                         showAlert('danger', errorMessage);
+                        // Cacher le loader interne en cas d'erreur
+                        $('#modalEmployeLoader').removeClass('d-flex').addClass('d-none');
                     },
-                    complete: function() { hideLoader(); }
+                    // Pas de complete() car on recharge la page en succès
                 });
             });
 
@@ -738,7 +766,7 @@
             $('#savePayrollBtn').on('click', function() {
                 if (Object.keys(payrollCart).length === 0) return;
                 
-                showLoader();
+                $('#creationLoader').removeClass('d-none').addClass('d-flex');
                 
                 const paieData = {
                     month: $('#payrollMonth').val(),
@@ -760,7 +788,7 @@
                          const errorMessage = xhr.responseJSON.message || "Erreur lors de la sauvegarde de la paie.";
                          showAlert('danger', errorMessage);
                     },
-                    complete: function() { hideLoader(); }
+                    complete: function() { $('#creationLoader').removeClass('d-flex').addClass('d-none'); }
                 });
             });
 
@@ -776,7 +804,7 @@
                     return;
                 }
 
-                showLoader();
+                $('#paymentLoader').removeClass('d-none').addClass('d-flex');
                 $.ajax({
                     url: `${baseUrl}/unpaid-paie/${token}`,
                     method: 'GET',
@@ -803,14 +831,14 @@
                         $('#paieDetails').slideUp();
                         $('#submitPaymentBtn').prop('disabled', true);
                     },
-                    complete: function() { hideLoader(); }
+                    complete: function() { $('#paymentLoader').removeClass('d-flex').addClass('d-none'); }
                 });
             });
 
             // Soumission du Paiement
             $('#payPaieForm').on('submit', function(e) {
                 e.preventDefault();
-                showLoader();
+                $('#paymentLoader').removeClass('d-none').addClass('d-flex');
                 
                 $.ajax({
                     url: '{{ route('manager.paie.pay') }}',
@@ -826,7 +854,7 @@
                     error: function(xhr) {
                         showAlert('danger', xhr.responseJSON.message || "Erreur lors du règlement de la paie.");
                     },
-                    complete: function() { hideLoader(); }
+                    complete: function() { $('#paymentLoader').removeClass('d-flex').addClass('d-none'); }
                 });
             });
 
